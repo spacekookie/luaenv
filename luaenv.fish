@@ -31,9 +31,10 @@ set LUAI_PATH ""            # Set an empty interpreter path (for now)
 set COMMAND ""              # The user command for later lookup
 set ENV_NAME ""             # The env (pile) we want to work on
 set ENV_LOCATION "global"   # We prefer global envs. Big pile, big fun 
+set LUA_SCOPE "system"      # We will also include system rocks
 
-set EXIT_OK             0
-set EXIT_WRONG_ARGS     255
+set EXIT_OK                 0
+set EXIT_WRONG_ARGS         255
 
 
 function options
@@ -99,18 +100,15 @@ for i in (options $argv)
       set LUA_VERSION (strip $value)
 
     # Set the lua interpreter manually
-    case i
+    case L
       set LUAI_PATH (strip $value)
+
+    case nosys
+      set LUA_SCOPE "local"
   end
 end
 
 ##################### CHECK USER INPUTS #####################
-
-
-# echo "Command '$COMMAND'"
-# echo "Env name '$ENV_NAME'"
-# echo "Lua version '$LUA_VERSION'"
-# echo "Lua I path '$LUAI_PATH'"
 
 
 # What lua interpreter does she want? 
@@ -151,22 +149,63 @@ else
   exit $EXIT_WRONG_ARGS
 end
 
+
+# Check if the env already exists
+
+
 # Switch over the commands and call apropriate functions
 switch $COMMAND;
   
   # Creating an env is:
-  # Where?
-  # With what?
-  # Copy existing lua-packages
+  #   - Where?
+  #   - With what?
+  #   - Copy existing lua-packages
   case create
     mkdir -p $ENV_PATH
     mkdir -p $ENV_PATH/bin
+    mkdir -p $ENV_PATH/lua
 
-    cp -r /usr/share/lua/$LUA_VERSION/ $ENV_PATH/libs/
+    # Copy the correct lua versions
     cp -v /usr/bin/lua$LUA_VERSION $ENV_PATH/bin/lua
-    cp -v /usr/bin/luarocks-$LUA_VERSION $ENV_PATH/bin/luarocks
+    cp -v /usr/bin/luarocks-$LUA_VERSION $ENV_PATH/bin/luarocks_backend
+    echo "\
+#!/usr/bin/fish
+$ENV_PATH/bin/luarocks_backend --tree $ENV_PATH/lua/ \$argv
+" > $ENV_PATH/bin/luarocks
+    chmod +x $ENV_PATH/bin/luarocks
 
-    
+    # Metadata info for later uses
+    echo $LUA_VERSION > $ENV_PATH/VERSION
+    echo $ENV_NAME > $ENV_PATH/NAME
+    echo $LUA_SCOPE > $ENV_PATH/SCOPE
+
+  # Activating an env is:
+  #   - Check env is valid (check metadata)
+  #   - Change $PATH to include $ENV_PATH in the front
+  #   - Change luarocks --tree $ENV_PATH --
+  #   - Set luapath to only use the pile + system
+  case use
+
+    # TODO: Properly check validity
+
+    # Restore previous state
+    set LUA_VERSION (cat $ENV_PATH/VERSION)
+    set ENV_NAME (cat $ENV_PATH/NAME)
+    set LUA_SCOPE (cat $ENV_PATH/SCOPE)
+
+    # Change $PATH
+
+
+
+
+    # Either make a big lua path
+    if test LUA_SCOPE = "system"
+
+
+    # or a really small one
+    else
+
+    end
 
 end
 
