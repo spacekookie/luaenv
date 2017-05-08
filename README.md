@@ -1,6 +1,5 @@
 # LUAENV
 
-
 Like RVM but for lua. Like [vert](https://github.com/aconbere/vert) but it sooo much cooler\*. You can either set your default lua version to something other than what your distribution has set or create local `piles` that only have specific dependencies installed for development.
 
 In this article `luaenv` and `pile` are used interchangably. They mean the same thing. An environment for lua stuff.
@@ -56,4 +55,3 @@ Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio
 ---
 
 \* According to me, with no control group or external input. Margin of error is 100%. I don't even know how to do margin of error. Terms and conditions may and *will* apply.
-
