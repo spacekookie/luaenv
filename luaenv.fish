@@ -53,6 +53,7 @@ printf "Usage: $APPNAME <command> <env> [options]
     luaenv destroy <env>            Destroy existing luaenvs
     luaenv use <env>                Use an existing luaenv
     luaenv workon <env>             Like use but change directory
+    luaenv ls                       List all globally installed envs
 
   Valid options:
     -l <path>                       Create a local env at the specified path
@@ -61,6 +62,23 @@ printf "Usage: $APPNAME <command> <env> [options]
 
   Please report bugs at https://github.com/spacekookie/luaenv
 "
+end
+
+# This function sets $ENV_PATH with local precedence
+function scope_local_global
+  # Check if $ENV_NAME exists under ~/.local/luaenv/
+  if test -d (readlink -f ~/.local/luaenv)/$ENV_NAME
+    echo "Global environment"
+    set ENV_PATH (readlink -f ~/.local/luaenv)/$ENV_NAME
+  end
+
+  # Check if $ENV_NAME is a path - it takes precedence
+  if test -d $ENV_NAME
+    echo "Local environment"
+    set ENV_PATH (readlink -f $ENV_NAME)
+  end
+
+  set ENV_PATH ""
 end
 
 # Set some flags based on arguments we got
@@ -90,6 +108,9 @@ for i in (options $argv)
       set COMMAND (strip $option)
       set ENV_NAME (strip $value)
 
+    case ls
+      set COMMAND (strip $option)
+
     # Define a local env path
     case l
       set ENV_NAME (strip $value)
@@ -109,7 +130,6 @@ for i in (options $argv)
 end
 
 ##################### CHECK USER INPUTS #####################
-
 
 # What lua interpreter does she want? 
 if [ $LUAI_PATH = "" ]
@@ -131,14 +151,6 @@ else
   end
 end
 
-# Fail if we weren't given an env-name
-if [ $ENV_NAME = "" ]
-  usage
-
-  # TODO: Change this to EXIT_WRONG_ARGS
-  exit $EXIT_OK 
-end
-
 # Expand $ENV_NAME to ENV_PATH
 if test $ENV_LOCATION = "global" 
   set ENV_PATH (readlink -f ~/.local/luaenv)/$ENV_NAME
@@ -149,12 +161,32 @@ else
   exit $EXIT_WRONG_ARGS
 end
 
+# Parse the "ls" command seperately because it needs no arguments
+if test $COMMAND = "ls"
+  for dir in (ls $ENV_PATH)
+    echo " " \* $dir \((cat $ENV_PATH$dir/VERSION)\)
+  end
 
-# Check if the env already exists
+  exit 0
+end
+
+
+##### Now we are only parsing env-specific commands #####
+
+
+# Fail if we weren't given an env-name
+if [ $ENV_NAME = "" ]
+  usage
+
+  # TODO: Change this to EXIT_WRONG_ARGS
+  exit $EXIT_OK 
+end
+
+# TODO: Check if the env already exists
 
 
 # Switch over the commands and call apropriate functions
-switch $COMMAND;
+switch $COMMAND
   
   # Creating an env is:
   #   - Where?
@@ -186,15 +218,8 @@ $ENV_PATH/bin/luarocks_backend --tree $ENV_PATH/lua/ \$argv
   #   - Set luapath to only use the pile + system
   case use
 
-    # Check if $ENV_NAME exists under ~/.local/luaenv/
-    if test -d (readlink -f ~/.local/luaenv)/$ENV_NAME
-      set ENV_PATH (readlink -f ~/.local/luaenv)/$ENV_NAME
-    end
-
-    # Check if $ENV_NAME is a path - it takes precedence
-    if test -d $ENV_NAME
-      set ENV_PATH (readlink -f $ENV_NAME)
-    end
+    # Set $ENV_PATH
+    scope_local_global
 
     # Restore previous state
     set LUA_VERSION (cat $ENV_PATH/VERSION)
@@ -216,6 +241,29 @@ $ENV_PATH/bin/luarocks_backend --tree $ENV_PATH/lua/ \$argv
     else
 
     end
+
+  case destroy
+
+    # Set $ENV_PATH
+    scope_local_global
+
+    
+
+    echo "Trying to delete" (set_color red) $ENV_PATH (set_color normal) "..." 
+    read -p 'echo "Is that right? [Y/n]"' -l confirm
+
+    echo $confirm
+    switch $confirm;
+      case '' Y y
+        echo "Deleting $ENV_PATH..."
+        rm -rf $ENV_PATH
+
+      case N n
+        echo "Canceling operation..."
+        exit 0
+    end
+
+    echo (set_color green) "Done :)" (set_color normal)
 
 end
 
