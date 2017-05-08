@@ -22,6 +22,19 @@
 #
 ###############################################################################
 
+set APPNAME "luaenv"
+set APPVERSION "0.1"
+
+set LUA_VERSION 5.3   # Default lua version is the latest
+set LUAI_PATH ""      # Set an empty interpreter path (for now)
+
+set COMMAND ""        # The user command for later lookup
+set ENV_NAME ""       # The env (pile) we want to work on
+
+
+set EXIT_OK             0
+set EXIT_WRONG_ARGS     255
+
 
 function options
   echo $argv | sed 's|--*|\\'\n'|g' | grep -v '^$'
@@ -31,13 +44,23 @@ function strip
   echo (string trim -- $argv)
 end
 
+function usage
+printf """Usage: $APPNAME <command> <env> [options] 
 
-set LUA_VERSION 5.3   # Default lua version is the latest
-set LUAI_PATH ""      # Set an empty interpreter path (for now)
+  Valid commands:
+    luaenv create <env> [options]   Create new luaenvs with options
+    luaenv destroy <env>            Destroy existing luaenvs
+    luaenv use <env>                Use an existing luaenv
+    lua workon <env>                Like use but change directory
 
-set COMMAND ""        # The user command for later lookup
-set ENV_NAME ""       # The env (pile) we want to work on
+  Valid options:
+    -l <path>                       Create a local env at the specified path
+    -v <version>                    Specify a lua version to use
+    -i <path>                       Specify a lua interpreter (clashes with -v)
 
+  Please report bugs at https://github.com/spacekookie/luaenv
+"""
+end
 
 # Set some flags based on arguments we got
 for i in (options $argv)
@@ -80,36 +103,46 @@ for i in (options $argv)
   end
 end
 
-
 ##################### CHECK USER INPUTS #####################
 
 
-echo "Command '$COMMAND'"
-echo "Env name '$ENV_NAME'"
-echo "Lua version '$LUA_VERSION'"
-echo "Lua I path '$LUAI_PATH'"
+# echo "Command '$COMMAND'"
+# echo "Env name '$ENV_NAME'"
+# echo "Lua version '$LUA_VERSION'"
+# echo "Lua I path '$LUAI_PATH'"
+
 
 # What lua interpreter does she want? 
 if [ $LUAI_PATH = "" ]
-  echo "Need to build the LUAI PATH"
   set $LUAI_PATH which "lua$LUA_VERSION" ^ /dev/null
 
+# Otherwise we might have been given one!
 else
+
+  # We really don't care :)
+  if [ $LUA_VERSION != "5.3" ]
+    echo "Ignoring provided lua version!"
+  end
 
   which $LUAI_PATH ^ /dev/null > /dev/null
   if not test $status -eq 0
     echo "Invalid lua interpreter: $LUAI_PATH"
-    exit 0
+    exit $EXIT_OK
   end
-
 end
 
-# echo "Lua interpreter: $LUAI_PATH"
+if [ $ENV_NAME = "" ]
+  usage
+  exit $EXIT_OK
+end
 
-# ### Check if the lua version is even installed
-# which "lua$LUA_VERSION" ^ /dev/null
-# if not test $status -eq 0
-#   echo "Invalid lua version: $LUA_VERSION"
-#   exit 255
-# end
 
+# Switch over the commands and call apropriate functions
+switch $COMMAND;
+  case wildcard;
+    # commands;
+end
+
+
+## Everything is awesome...
+exit $EXIT_OK
