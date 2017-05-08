@@ -52,7 +52,7 @@ printf "Usage: $APPNAME <command> <env> [options]
     luaenv create <env> [options]   Create new luaenvs with options
     luaenv destroy <env>            Destroy existing luaenvs
     luaenv use <env>                Use an existing luaenv
-    lua workon <env>                Like use but change directory
+    luaenv workon <env>             Like use but change directory
 
   Valid options:
     -l <path>                       Create a local env at the specified path
@@ -100,10 +100,10 @@ for i in (options $argv)
       set LUA_VERSION (strip $value)
 
     # Set the lua interpreter manually
-    case L
+    case i
       set LUAI_PATH (strip $value)
 
-    case nosys
+    case L
       set LUA_SCOPE "local"
   end
 end
@@ -186,7 +186,15 @@ $ENV_PATH/bin/luarocks_backend --tree $ENV_PATH/lua/ \$argv
   #   - Set luapath to only use the pile + system
   case use
 
-    # TODO: Properly check validity
+    # Check if $ENV_NAME exists under ~/.local/luaenv/
+    if test -d (readlink -f ~/.local/luaenv)/$ENV_NAME
+      set ENV_PATH (readlink -f ~/.local/luaenv)/$ENV_NAME
+    end
+
+    # Check if $ENV_NAME is a path - it takes precedence
+    if test -d $ENV_NAME
+      set ENV_PATH (readlink -f $ENV_NAME)
+    end
 
     # Restore previous state
     set LUA_VERSION (cat $ENV_PATH/VERSION)
@@ -194,13 +202,15 @@ $ENV_PATH/bin/luarocks_backend --tree $ENV_PATH/lua/ \$argv
     set LUA_SCOPE (cat $ENV_PATH/SCOPE)
 
     # Change $PATH
+    set LUAENV_BACKUP_PATH $PATH
+    set PATH $ENV_PATH/bin $PATH 
 
-
-
+    echo "You are now using $ENV_NAME@lua$LUA_VERSION"
 
     # Either make a big lua path
     if test LUA_SCOPE = "system"
 
+      set LUA_PATH
 
     # or a really small one
     else
