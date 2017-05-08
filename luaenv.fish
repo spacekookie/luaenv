@@ -25,12 +25,12 @@
 set APPNAME "luaenv"
 set APPVERSION "0.1"
 
-set LUA_VERSION 5.3   # Default lua version is the latest
-set LUAI_PATH ""      # Set an empty interpreter path (for now)
+set LUA_VERSION 5.3         # Default lua version is the latest
+set LUAI_PATH ""            # Set an empty interpreter path (for now)
 
-set COMMAND ""        # The user command for later lookup
-set ENV_NAME ""       # The env (pile) we want to work on
-
+set COMMAND ""              # The user command for later lookup
+set ENV_NAME ""             # The env (pile) we want to work on
+set ENV_LOCATION "global"   # We prefer global envs. Big pile, big fun 
 
 set EXIT_OK             0
 set EXIT_WRONG_ARGS     255
@@ -92,6 +92,7 @@ for i in (options $argv)
     # Define a local env path
     case l
       set ENV_NAME (strip $value)
+      set ENV_LOCATION "local"
 
     # Set the lua version differently
     case v
@@ -124,25 +125,50 @@ else
     echo "Ignoring provided lua version!"
   end
 
+  # Make sure the interpreter actually exists
   which $LUAI_PATH ^ /dev/null > /dev/null
   if not test $status -eq 0
     echo "Invalid lua interpreter: $LUAI_PATH"
-    exit $EXIT_OK
+    exit $EXIT_WRONG_ARGS
   end
 end
 
+# Fail if we weren't given an env-name
 if [ $ENV_NAME = "" ]
   usage
-  exit $EXIT_OK
+
+  # TODO: Change this to EXIT_WRONG_ARGS
+  exit $EXIT_OK 
 end
 
+# Expand $ENV_NAME to ENV_PATH
+if test $ENV_LOCATION = "global" 
+  set ENV_PATH (readlink -f ~/.local/luaenv)/$ENV_NAME
+else if test $ENV_LOCATION = "local"
+  set ENV_PATH (readlink -f $ENV_NAME)
+else
+  echo "Some error has occured!"
+  exit $EXIT_WRONG_ARGS
+end
 
 # Switch over the commands and call apropriate functions
 switch $COMMAND;
-  case wildcard;
-    # commands;
-end
+  
+  # Creating an env is:
+  # Where?
+  # With what?
+  # Copy existing lua-packages
+  case create
+    mkdir -p $ENV_PATH
+    mkdir -p $ENV_PATH/bin
 
+    cp -r /usr/share/lua/$LUA_VERSION/ $ENV_PATH/libs/
+    cp -v /usr/bin/lua$LUA_VERSION $ENV_PATH/bin/lua
+    cp -v /usr/bin/luarocks-$LUA_VERSION $ENV_PATH/bin/luarocks
+
+    
+
+end
 
 ## Everything is awesome...
 exit $EXIT_OK
