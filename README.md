@@ -38,21 +38,20 @@ $ luaenv use env/
 $ luaenv stop  # This way we could stop using the environment
 ```
 
-Now when we call `luarocks --version` we will get:
+Now when we call `lua -v` we will get:
 
 ```bash
-/bin/luarocks-5.1 2.4.2
+Lua 5.1.5  Copyright (C) 1994-2012 Lua.org, PUC-Rio
 ```
 
-Hurray!
+**Hurray!**
 
 
 ### So what exactly is the difference to vert? O.ô
 
-1. luaenv doesn't clutter your home directory with more `.folders`. It uses unix standards where things should be stored
-2. It supports my favourite shell: [fish](https://fishshell.org)
-3. It's not written in lua which means that accidentally breaking your lua config doesn't brick your ability to switch/ init lua versions
-4. It's general design is much closer to RVM than vert which is more based on the principles of python virtualenvs
+ - luaenv doesn't clutter your home directory with more `.folders`. It uses unix standards where things should be stored
+ - It supports my favourite shell [fish](https://fishshell.org) a lot better
+ - It's general design is much closer to RVM than vert which is more based on the principles of python virtualenvs
 
 ---
 
