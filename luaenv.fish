@@ -46,7 +46,7 @@ function strip
 end
 
 function usage
-printf """Usage: $APPNAME <command> <env> [options] 
+printf "Usage: $APPNAME <command> <env> [options] 
 
   Valid commands:
     luaenv create <env> [options]   Create new luaenvs with options
@@ -60,7 +60,7 @@ printf """Usage: $APPNAME <command> <env> [options]
     -i <path>                       Specify a lua interpreter (clashes with -v)
 
   Please report bugs at https://github.com/spacekookie/luaenv
-"""
+"
 end
 
 # Set some flags based on arguments we got
