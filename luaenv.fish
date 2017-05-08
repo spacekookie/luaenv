@@ -23,10 +23,14 @@
 ###############################################################################
 
 
-# Parse options that we're given
 function options
   echo $argv | sed 's|--*|\\'\n'|g' | grep -v '^$'
 end
+
+function strip
+  echo (string trim -- $argv)
+end
+
 
 set LUA_VERSION 5.3   # Default lua version is the latest
 set LUAI_PATH ""      # Set an empty interpreter path (for now)
@@ -34,6 +38,8 @@ set LUAI_PATH ""      # Set an empty interpreter path (for now)
 set COMMAND ""        # The user command for later lookup
 set ENV_NAME ""       # The env (pile) we want to work on
 
+
+# Set some flags based on arguments we got
 for i in (options $argv)
   echo $i | read -l option value
 
@@ -42,40 +48,41 @@ for i in (options $argv)
 
     # Create a new env
     case create
-      set COMMAND $option
-      set ENV_NAME $value # This might be null but we don't care
+      set COMMAND (strip $option)
+      set ENV_NAME (strip $value) # This might be null but we don't care
 
     # Start using an env
     case use      
-      set COMMAND $option
-      set ENV_NAME $value
+      set COMMAND (strip $option)
+      set ENV_NAME (strip $value)
 
     # Use an env and jump to it's working dir
     case workon
-      set COMMAND $option
-      set ENV_NAME $value
+      set COMMAND (strip $option)
+      set ENV_NAME (strip $value)
 
     # Cleanly destroy an env
     case destroy
-      set COMMAND $option
-      set ENV_NAME $value
+      set COMMAND (strip $option)
+      set ENV_NAME (strip $value)
 
     # Define a local env path
     case l
-      set ENV_NAME $value
+      set ENV_NAME (strip $value)
 
     # Set the lua version differently
     case v
-      set LUA_VERSION $value
+      set LUA_VERSION (strip $value)
 
     # Set the lua interpreter manually
     case i
-      set LUAI_PATH $value
+      set LUAI_PATH (strip $value)
   end
 end
 
 
 ##################### CHECK USER INPUTS #####################
+
 
 echo "Command '$COMMAND'"
 echo "Env name '$ENV_NAME'"
